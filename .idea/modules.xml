@@ -3,6 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/ATAP_Collab.iml" filepath="$PROJECT_DIR$/.idea/ATAP_Collab.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../Historical_Fires_Near_Me/Code/Bushfire_News_Articles_Pipeline/.idea/Bushfire_News_Articles_Pipeline.iml" filepath="$PROJECT_DIR$/../Historical_Fires_Near_Me/Code/Bushfire_News_Articles_Pipeline/.idea/Bushfire_News_Articles_Pipeline.iml" />
     </modules>
   </component>
 </project>
