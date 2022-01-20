@@ -37,9 +37,9 @@ def build_url(placename: str, search_type: str) -> str:
 
 def query_name(placename: str, search_type: str):
     """
-    Use tlcmap/ghap API to check a placename, returning whatever results are found.
+    Use tlcmap/ghap API to check a placename, implemented fuzzy search but will not handle non returns.
     """
-    url = build_url(placename, search_type=search_type)
+    url = build_url(placename, search_type='fuzzy')
     if url:
         r = requests.get(url)
         if r.url == 'https://tlcmap.org/ghap/maxpaging':
@@ -175,7 +175,7 @@ Establish input and output file
 """
 # inputfile = R'C:\Users\tecto\Desktop\Finn doc code\csv test\Book1_Failed_Test.csv'
 # inputfile = '/Users/fiannualamorgan/Documents/GitHub/Historical_Fires_Near_Me/Sections/Bushfire_Literature/Transformed_Data/Bushfire_Literature_Input_Disambiguator.csv'
-inputfile = '/Users/fiannualamorgan/Documents/GitHub/Historical_Fires_Near_Me/Sections/1851_Fires/1851_Newspaper_Placenames_Disambiguator_Input.csv'
+inputfile = '/Users/fiannualamorgan/Documents/GitHub/ATAP_Collab/test_csv.csv'
 outfile = outFile = inputfile.split("/")[-1].split(".")[0] + "output.csv"
 
 data_to_add = pd.read_csv(inputfile)
