@@ -16,7 +16,7 @@ def log(to_log: str):
     print(f"{now} --- {to_log}")
 
 
-def build_url(placename: str, search_type: str) -> str:
+def build_url(placename: str, search_type: str, search_public_data: bool = True) -> str:
     """
     Build a url to query the tlcmap/ghap API.
 
@@ -24,14 +24,26 @@ def build_url(placename: str, search_type: str) -> str:
     search_type: what search type to use (accepts one of ['contains','fuzzy','exact'])
     """
     safe_placename = urllib.parse.quote(placename.strip().lower())
+
+    url = f"https://tlcmap.org/ghap/search?"
+
     if search_type == 'fuzzy':
-        url = f"https://tlcmap.org/ghap/search?fuzzyname={safe_placename}&searchausgaz=on&searchpublicdatasets=on&format=json"
+        url += f"fuzzyname={safe_placename}"
     elif search_type == 'exact':
-        url = f"https://tlcmap.org/ghap/search?name={safe_placename}&searchausgaz=on&searchpublicdatasets=on&format=json"
+        url = f"name={safe_placename}"
     elif search_type == 'contains':
-        url = f"https://tlcmap.org/ghap/search?containsname={safe_placename}&searchausgaz=on&searchpublicdatasets=on&format=json"
+        url = f"containsname={safe_placename}"
     else:
         return None
+
+    # Search Australian National Placenames Survey provided data
+    url += "&searchausgaz=on"
+    # Search public provided data, this data could be unreliable
+    if search_public_data == True:
+        url += "&searchpublicdatasets=on"
+    # Retreive data as JSON
+    url += "&format=json"
+
     return url
 
 
@@ -39,7 +51,7 @@ def query_name(placename: str, search_type: str):
     """
     Use tlcmap/ghap API to check a placename, implemented fuzzy search but will not handle non returns.
     """
-    url = build_url(placename, search_type='fuzzy')
+    url = build_url(placename, search_type='fuzzy', search_public_data = False)
     if url:
         r = requests.get(url)
         if r.url == 'https://tlcmap.org/ghap/maxpaging':
@@ -101,16 +113,25 @@ def query_name_with_fallback(placename: str,
             continue
     return results
 
-
 def find_state_certainty(best_results: dict, threshold: float):
     """
     Determine the percentage of placenames present in each state
     """
-    state_count = []
+    state_count = { None: 0 }
     for f in best_results['features']:
-        state_count += [f['properties']['state']]
+        if 'state' in f['properties']:
+            # state_count += [f['properties']['state']]
+            if f['properties']['state'] not in state_count:
+                state_count[f['properties']['state']] = 0
+            state_count[f['properties']['state']] += 0
+            # best_results['n_results'] += 1
+        else:
+            state_count[None] += 1
 
     best_results['n_results'] = len(state_count)
+
+    # Filter out None state
+    # n_unique = len(set({state: count for state, count in test.items() if state}))
 
     state_count_uniques = list(set(state_count))
     n_unique = len(state_count_uniques)
@@ -139,7 +160,7 @@ def find_state_certainty(best_results: dict, threshold: float):
     best_results['winnerPct'] = winnerPct
 
     """
-    Find the median coordinates of the place name. If there is a clear winner amongst the states, only select entries 
+    Find the median coordinates of the place name. If there is a clear winner amongst the states, only select entries
     from that state. Otherwise just take the median (for cases where 'multiple sites' are potential winners, these
     coordinates might be very dubious)
     """
@@ -148,9 +169,10 @@ def find_state_certainty(best_results: dict, threshold: float):
     tmpLong = []
 
     for f in best_results['features']:
-        if f['properties']['state'] in candidates and type(f['geometry']['coordinates'][0]) is float:
-            tmpLat.append(f['geometry']['coordinates'][0])
-            tmpLong.append(f['geometry']['coordinates'][1])
+        if 'state' in f['properties']:
+            if f['properties']['state'] in candidates and type(f['geometry']['coordinates'][0]) is float:
+                tmpLat.append(f['geometry']['coordinates'][0])
+                tmpLong.append(f['geometry']['coordinates'][1])
 
     if len(tmpLat) > 0:
         best_results['best_coords'] = [statistics.median(tmpLat), statistics.median(tmpLong)]
@@ -169,13 +191,10 @@ def find_state_certainty(best_results: dict, threshold: float):
 
     return best_results
 
-
 """
 Establish input and output file
 """
-# inputfile = R'C:\Users\tecto\Desktop\Finn doc code\csv test\Book1_Failed_Test.csv'
-# inputfile = '/Users/fiannualamorgan/Documents/GitHub/Historical_Fires_Near_Me/Sections/Bushfire_Literature/Transformed_Data/Bushfire_Literature_Input_Disambiguator.csv'
-inputfile = '/Users/fiannualamorgan/Documents/GitHub/ATAP_Collab/test_csv.csv'
+inputfile = 'test_csv.csv'
 outfile = outFile = inputfile.split("/")[-1].split(".")[0] + "output.csv"
 
 data_to_add = pd.read_csv(inputfile)
@@ -202,6 +221,7 @@ for i in data_to_add.index:
     # to be the winner. Scaling this number to 1.5 would mean those numbers are scaled to 75% and 37.5%, respectively.
     if best_results != None:
         best_results = find_state_certainty(best_results, 1)  # threshold(was 1.5)
+
         lats.append(best_results['best_coords'][0])
         longs.append(best_results['best_coords'][1])
         finalStates.append(best_results['most_likely_state'])
@@ -238,4 +258,3 @@ end = time.time()
 print("Time elapsed | ", round(end - start, 2), "seconds")
 print("CSV written")
 print('done')
-
