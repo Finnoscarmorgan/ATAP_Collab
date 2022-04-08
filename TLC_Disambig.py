@@ -57,9 +57,14 @@ def query_name(placename: str, search_type: str):
             return None
         log(f"Query returned {r.status_code}")
         if r.ok:
+            """
+            NOTE: we could catch json.decoder.JSONDecodeError, but since json=<3.4 doesn't raise this,
+                  a generic ValueError is more portable
+            See: https://stackoverflow.com/questions/44714046/python3-unable-to-import-jsondecodeerror-from-json-decoder
+            """
             try:
                 data = json.loads(r.content)
-            except json.decoder.JSONdecodeError: #Error handling for 0 matches 
+            except ValueError: #Error handling for 0 matches 
                 return None
             return data
     return None
@@ -168,9 +173,9 @@ def find_state_certainty(best_results: dict, threshold: float):
 
     for f in best_results['features']:
         if 'state' in f['properties']:
-        if f['properties']['state'] in candidates and type(f['geometry']['coordinates'][0]) is float:
-            tmpLat.append(f['geometry']['coordinates'][0])
-            tmpLong.append(f['geometry']['coordinates'][1])
+            if f['properties']['state'] in candidates and type(f['geometry']['coordinates'][0]) is float:
+                tmpLat.append(f['geometry']['coordinates'][0])
+                tmpLong.append(f['geometry']['coordinates'][1])
 
     if len(tmpLat) > 0:
         best_results['best_coords'] = [statistics.median(tmpLat), statistics.median(tmpLong)]
