@@ -167,6 +167,7 @@ def find_state_certainty(best_results: dict, threshold: float):
     tmpLong = []
 
     for f in best_results['features']:
+        if 'state' in f['properties']:
         if f['properties']['state'] in candidates and type(f['geometry']['coordinates'][0]) is float:
             tmpLat.append(f['geometry']['coordinates'][0])
             tmpLong.append(f['geometry']['coordinates'][1])
