@@ -57,7 +57,10 @@ def query_name(placename: str, search_type: str):
             return None
         log(f"Query returned {r.status_code}")
         if r.ok:
-            data = json.loads(r.content)
+            try:
+                data = json.loads(r.content)
+            except json.decoder.JSONdecodeError: #Error handling for 0 matches 
+                return None
             return data
     return None
 
