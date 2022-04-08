@@ -9,7 +9,6 @@ import time
 import math
 from fuzzywuzzy import fuzz
 
-
 def log(to_log: str):
     """"Quick and dirty log."""
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -113,24 +112,20 @@ def query_name_with_fallback(placename: str,
             continue
     return results
 
+
 def find_state_certainty(best_results: dict, threshold: float):
     """
     Determine the percentage of placenames present in each state
     """
-    state_count = { None: 0 }
+    state_count = []
+    
     for f in best_results['features']:
         if 'state' in f['properties']:
-            # state_count += [f['properties']['state']]
-            if f['properties']['state'] not in state_count:
-                state_count[f['properties']['state']] = 0
-            state_count[f['properties']['state']] += 0
-            # best_results['n_results'] += 1
-        else:
-            state_count[None] += 1
+            state_count += [f['properties']['state']]
 
     best_results['n_results'] = len(state_count)
 
-    # Filter out None state
+    # Filter out "None" state
     # n_unique = len(set({state: count for state, count in test.items() if state}))
 
     state_count_uniques = list(set(state_count))
@@ -169,10 +164,9 @@ def find_state_certainty(best_results: dict, threshold: float):
     tmpLong = []
 
     for f in best_results['features']:
-        if 'state' in f['properties']:
-            if f['properties']['state'] in candidates and type(f['geometry']['coordinates'][0]) is float:
-                tmpLat.append(f['geometry']['coordinates'][0])
-                tmpLong.append(f['geometry']['coordinates'][1])
+        if f['properties']['state'] in candidates and type(f['geometry']['coordinates'][0]) is float:
+            tmpLat.append(f['geometry']['coordinates'][0])
+            tmpLong.append(f['geometry']['coordinates'][1])
 
     if len(tmpLat) > 0:
         best_results['best_coords'] = [statistics.median(tmpLat), statistics.median(tmpLong)]
@@ -191,9 +185,7 @@ def find_state_certainty(best_results: dict, threshold: float):
 
     return best_results
 
-"""
-Establish input and output file
-"""
+# Establish input and output file
 inputfile = 'test_csv.csv'
 outfile = outFile = inputfile.split("/")[-1].split(".")[0] + "output.csv"
 
@@ -214,11 +206,13 @@ for i in data_to_add.index:
 
     best_results = query_name_with_fallback(df.iloc[0])
 
-    # Adjust the sensitivity of the state certainty by scaling the second input. At 1, it means that to be considered
-    # the 'winner', a state needs to have more than or equal to the number of places that would be expected by chance.
-    # So if only VIC and NSW are found, One would need 50% or more of the place names to be considered the actual state
-    # containing the locality of interest. If four states are found, then one needs more than 25% of the total place names
-    # to be the winner. Scaling this number to 1.5 would mean those numbers are scaled to 75% and 37.5%, respectively.
+    """
+    Adjust the sensitivity of the state certainty by scaling the second input. At 1, it means that to be considered
+    the 'winner', a state needs to have more than or equal to the number of places that would be expected by chance.
+    So if only VIC and NSW are found, One would need 50% or more of the place names to be considered the actual state
+    containing the locality of interest. If four states are found, then one needs more than 25% of the total place names
+    to be the winner. Scaling this number to 1.5 would mean those numbers are scaled to 75% and 37.5%, respectively.
+    """
     if best_results != None:
         best_results = find_state_certainty(best_results, 1)  # threshold(was 1.5)
 
